@@ -7,3 +7,4 @@ declare module '*.webp';
 declare module '*.ico';
 declare module '*.c';
 declare module '*.txt';
+declare module '*.obj';

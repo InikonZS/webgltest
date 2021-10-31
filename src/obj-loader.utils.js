@@ -42,8 +42,8 @@ function getModList(oob, genOwnNormal, preScaler=1){
 
           sp = spj[1]-1;
           if (vertexListUV[sp]){
-            texList.push(vertexListUV[sp].u*preScaler);
-            texList.push(1-vertexListUV[sp].v*preScaler);
+            texList.push(vertexListUV[sp].u);
+            texList.push(1-vertexListUV[sp].v);
           }
 
           if (!genOwnNormal){

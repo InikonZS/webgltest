@@ -1,9 +1,11 @@
 import objLoader from './obj-loader.utils';
-import model from './assets/Tie_Interceptor.txt';
+import model from './assets/skull2.obj';
 import { m4Module } from './ext-utils/m4';
 import { createShader, createProgram } from './glutils';
 import { Vector3d } from './vector3d.dev';
 import calc from './calc.utils.js';
+import skull from './assets/Skull.jpg';
+import { createTexture } from './glutils';
 
 const m4 = m4Module();
 
@@ -32,6 +34,7 @@ export function testGL(
   var colorAttributeLocation = gl.getAttribLocation(program, 'a_color');
   var transformUniformLocation = gl.getUniformLocation(program, 'u_transform');
   var colorUniformLocation = gl.getUniformLocation(program, 'u_color');
+  var aUvAttributeLocation = gl.getAttribLocation(program, 'a_uv');
 
   // Create a buffer and put three 2d clip space points in it
   var positionBuffer = gl.createBuffer();
@@ -40,6 +43,7 @@ export function testGL(
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
   var modelData = objLoader.getModList(model, false, 0.3);
+  // gl.cullFace(gl.BACK);
   var positions = modelData.triangleList;
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -50,6 +54,14 @@ export function testGL(
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
   // code above this line is initialization code.
   // code below this line is rendering code.
+
+  var uvBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(modelData.texList),
+    gl.STATIC_DRAW
+  );
 
   // Tell WebGL how to convert from clip space to pixels
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -71,6 +83,7 @@ export function testGL(
   // Turn on the attribute
   gl.enableVertexAttribArray(positionAttributeLocation);
   gl.enableVertexAttribArray(colorAttributeLocation);
+  gl.enableVertexAttribArray(aUvAttributeLocation);
 
   // Bind the position buffer.
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -106,6 +119,22 @@ export function testGL(
     offset
   );
 
+  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+  // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+  var size = 2; // 2 components per iteration
+  var type = gl.FLOAT; // the data is 32bit floats
+  var normalize = false; // don't normalize the data
+  var stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+  var offset = 0; // start at the beginning of the buffer
+  gl.vertexAttribPointer(
+    aUvAttributeLocation,
+    size,
+    type,
+    normalize,
+    stride,
+    offset
+  );
+
   let dom: Array<Model3d> = [];
 
   let project = m4.perspective(
@@ -115,7 +144,7 @@ export function testGL(
     30
   );
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1; i++) {
     let model3d = new Model3d(
       gl,
       project,
@@ -146,9 +175,10 @@ class Model3d {
   public position: Vector3d;
   public colorUniformLocation: WebGLUniformLocation;
 
-  private speed: number = Math.random() * 5;
+  private speed: number = Math.random() * 3;
   public transformed: Array<any> = [];
   private isHovered: boolean;
+  private texture: WebGLTexture;
 
   constructor(
     gl: WebGLRenderingContext,
@@ -164,6 +194,11 @@ class Model3d {
     this.transformUniformLocation = transformUniformLocation;
     this.colorUniformLocation = colorUniformLocation;
     this.position = position.add(0, 0, 0, false);
+    this.texture = null;
+    createTexture(gl, skull, (texture) => {
+      this.texture = texture;
+      console.log(this.texture);
+    });    
   }
 
   render(timeStamp: number) {
@@ -174,6 +209,8 @@ class Model3d {
     mtx = m4.xRotate(mtx, this.angle);
 
     mtx = m4.multiply(this.project, mtx);
+
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
 
     //for (let i = 0; i < 100; i++){
     let mtx1 = m4.translate(
