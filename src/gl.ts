@@ -16,7 +16,15 @@ export function testGL(
 ): void {
   gl.canvas.addEventListener('mousemove', (e: MouseEvent) => {
     // dom.forEach(it => it.processMove(new Vector3d(e.offsetX, e.offsetY, 0)));
-    dom[0].processMove(new Vector3d(e.offsetX, e.offsetY, 0));
+    dom[0].processMove(e);
+  });
+  gl.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+    // dom.forEach(it => it.processMove(new Vector3d(e.offsetX, e.offsetY, 0)));
+    dom[0].processUp(e);
+  });
+  gl.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+    // dom.forEach(it => it.processMove(new Vector3d(e.offsetX, e.offsetY, 0)));
+    dom[0].processDown(e);
   });
   // create GLSL shaders, upload the GLSL source, compile the shaders
   var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -153,6 +161,29 @@ export function testGL(
       new Vector3d(i % 3, i / 3, 0),
       colorUniformLocation
     );
+
+    let isDragStart = false;
+    let startPoint: Vector3d;
+    let initialAngle: number;
+
+    model3d.onMouseDown = (e) => {
+      initialAngle = model3d.angle;
+      isDragStart = true;
+      startPoint = new Vector3d(e.offsetX, e.offsetY, 0);
+    }
+
+    model3d.onMouseUp = (e) => {
+      isDragStart = false;
+    }
+
+    model3d.onMouseMove = (e) => {      
+      let vector = new Vector3d(e.offsetX, e.offsetY, 0);
+
+      if (isDragStart) {
+        model3d.angle = initialAngle + vector.subVector(startPoint).y / 500;
+      }
+    }
+
     dom.push(model3d);
   }
 
@@ -175,10 +206,15 @@ class Model3d {
   public position: Vector3d;
   public colorUniformLocation: WebGLUniformLocation;
 
-  private speed: number = Math.random() * 3;
+  private speed: number = Math.random() * 1;
   public transformed: Array<any> = [];
   private isHovered: boolean;
   private texture: WebGLTexture;
+  public onMouseIn: (e: MouseEvent) => void;
+  public onMouseOut: (e: MouseEvent) => void;
+  public onMouseMove: (e: MouseEvent) => void;
+  public onMouseUp: (e: MouseEvent) => void;
+  public onMouseDown: (e: MouseEvent) => void;
 
   constructor(
     gl: WebGLRenderingContext,
@@ -197,15 +233,15 @@ class Model3d {
     this.texture = null;
     createTexture(gl, skull, (texture) => {
       this.texture = texture;
-      console.log(this.texture);
-    });    
+    });
+    this.isHovered = false;
   }
 
   render(timeStamp: number) {
     this.angle += (1 / 180) * Math.PI * this.speed;
     let mtx = m4.identity(); //m4.identity();
     mtx = m4.translate(mtx, 0, 0, -1);
-    mtx = m4.yRotate(mtx, this.angle);
+    // mtx = m4.yRotate(mtx, this.angle);
     mtx = m4.xRotate(mtx, this.angle);
 
     mtx = m4.multiply(this.project, mtx);
@@ -241,7 +277,8 @@ class Model3d {
     //}
   }
 
-  processMove(pos: Vector3d) {
+  processMove(e: MouseEvent) {
+    const pos = new Vector3d(e.offsetX, e.offsetY, 0);
     // console.log(this.transformed[0], pos);
     let crossed = calc.isCrossedMeshByLine(
       this.transformed,
@@ -252,10 +289,29 @@ class Model3d {
     // new Vector3d((pos.x - this.gl.canvas.width/2)/this.gl.canvas.width, (pos.y- this.gl.canvas.height/2)/this.gl.canvas.height, 1000))
 
     if (crossed) {
-      this.isHovered = true;
-      console.log(1);
+      this.onMouseMove(e);
+      if (this.isHovered === false) {
+        this.isHovered = true;
+        this.onMouseIn && this.onMouseIn(e);
+      }
     } else {
-      this.isHovered = false;
+      if (this.isHovered === true) {
+        this.isHovered = false;
+        this.onMouseOut && this.onMouseOut(e);
+      }      
+    }
+  }
+
+  processUp(e: MouseEvent) {
+    if (this.isHovered) {      
+      this.onMouseUp && this.onMouseUp(e);
+    }
+
+  }
+
+  processDown(e: MouseEvent) {
+    if (this.isHovered) {
+      this.onMouseDown && this.onMouseDown(e);
     }
   }
 }
