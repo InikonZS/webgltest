@@ -1,5 +1,5 @@
 import objLoader from './obj-loader.utils';
-import model from './assets/skull2.obj';
+import model from './assets/truck.obj';
 import { m4Module } from './ext-utils/m4';
 import { createShader, createProgram } from './glutils';
 import { Vector3d } from './vector3d.dev';
@@ -14,6 +14,8 @@ export function testGL(
   vertexShaderSource: string,
   fragmentShaderSource: string
 ): void {
+  let lightPoint:Vector3d = new Vector3d(0, 0, -10);
+
   gl.canvas.addEventListener('mousemove', (e: MouseEvent) => {
     // dom.forEach(it => it.processMove(new Vector3d(e.offsetX, e.offsetY, 0)));
     dom[0].processMove(e);
@@ -42,6 +44,7 @@ export function testGL(
   var colorAttributeLocation = gl.getAttribLocation(program, 'a_color');
   var transformUniformLocation = gl.getUniformLocation(program, 'u_transform');
   var colorUniformLocation = gl.getUniformLocation(program, 'u_color');
+  var lightPointUniformLocation = gl.getUniformLocation(program, 'u_lightPoint');
   var aUvAttributeLocation = gl.getAttribLocation(program, 'a_uv');
 
   // Create a buffer and put three 2d clip space points in it
@@ -50,7 +53,7 @@ export function testGL(
   // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-  var modelData = objLoader.getModList(model, false, 0.3);
+  var modelData = objLoader.getModList(model, false, 1.3);
   // gl.cullFace(gl.BACK);
   var positions = modelData.triangleList;
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
@@ -159,7 +162,8 @@ export function testGL(
       modelData,
       transformUniformLocation,
       new Vector3d(i % 3, i / 3, 0),
-      colorUniformLocation
+      colorUniformLocation,
+      lightPointUniformLocation
     );
 
     let isDragStart = false;
@@ -178,9 +182,9 @@ export function testGL(
 
     model3d.onMouseMove = (e) => {      
       let vector = new Vector3d(e.offsetX, e.offsetY, 0);
-
+      lightPoint = new Vector3d(e.offsetX - 100, e.offsetY - 100, -100);
       if (isDragStart) {
-        model3d.angle = initialAngle + vector.subVector(startPoint).y / 500;
+        //model3d.angle = initialAngle + vector.subVector(startPoint).y / 500;
       }
     }
 
@@ -190,7 +194,7 @@ export function testGL(
   function render(timeStamp: number) {
     window.requestAnimationFrame((timeStamp) => {
       render(timeStamp);
-      dom[0].render(timeStamp); //dom.forEach(it=>it.render(timeStamp));
+      dom[0].render(timeStamp, lightPoint); //dom.forEach(it=>it.render(timeStamp));
     });
   }
 
@@ -215,6 +219,7 @@ class Model3d {
   public onMouseMove: (e: MouseEvent) => void;
   public onMouseUp: (e: MouseEvent) => void;
   public onMouseDown: (e: MouseEvent) => void;
+  lightPointLocation: WebGLUniformLocation;
 
   constructor(
     gl: WebGLRenderingContext,
@@ -222,12 +227,14 @@ class Model3d {
     modelData: any,
     transformUniformLocation: any,
     position: Vector3d,
-    colorUniformLocation: WebGLUniformLocation
+    colorUniformLocation: WebGLUniformLocation,
+    lightPointLocation: WebGLUniformLocation
   ) {
     this.gl = gl;
     this.project = camera;
     this.modelData = modelData;
     this.transformUniformLocation = transformUniformLocation;
+    this.lightPointLocation = lightPointLocation;
     this.colorUniformLocation = colorUniformLocation;
     this.position = position.add(0, 0, 0, false);
     this.texture = null;
@@ -237,7 +244,7 @@ class Model3d {
     this.isHovered = false;
   }
 
-  render(timeStamp: number) {
+  render(timeStamp: number, lightPoint:Vector3d) {
     this.angle += (1 / 180) * Math.PI * this.speed;
     let mtx = m4.identity(); //m4.identity();
     mtx = m4.translate(mtx, 0, 0, -1);
@@ -257,7 +264,7 @@ class Model3d {
     );
     mtx1 = m4.multiply(mtx1, mtx);
     this.gl.uniformMatrix4fv(this.transformUniformLocation, false, mtx1);
-
+    this.gl.uniform3fv(this.lightPointLocation, new Float32Array([lightPoint.x, lightPoint.y, lightPoint.z]));
     this.gl.uniform4fv(
       this.colorUniformLocation,
       this.isHovered ? [1, 0, 0, 1] : [0, 0, 1, 1]

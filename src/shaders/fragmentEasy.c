@@ -6,12 +6,13 @@
   varying vec2 v_texture;
 
   uniform vec4 u_color;
-  uniform sampler2D u_texture;  
+  uniform sampler2D u_texture; 
+  varying vec3 v_lightPoint;
 
   void main() {
     // gl_FragColor is a special variable a fragment shader
     // is responsible for setting
-    float color = dot(normalize(vec3(0, 0, -1.0)),normalize(vertexColor.xyz));//vec4(0.0, 0.0, 0.0, 1.0);
+    float color = dot(normalize(v_lightPoint),normalize(vertexColor.xyz));//vec4(0.0, 0.0, 0.0, 1.0);
     //if(vertexColor.r<0.1){
       //color = vec4(0.5,0.0,0.0,1.0);//vertexColor;//vec4(1, 0, 0.5, 1); // return redish-purple
    //  } else{
