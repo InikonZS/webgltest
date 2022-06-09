@@ -182,6 +182,11 @@ export function testGL(
       isDragStart = false;
     }
 
+    //потім напишу норм, без цього грузовик продовжує крутитись, якщо кнопку мишки відпустили поза зображенням машинки
+    document.body.onmouseup = (e) => {
+      isDragStart = false;
+    }
+
     model3d.onMouseMove = (e) => {      
       let vector = new Vector3d(e.offsetX, e.offsetY, 0);
       lightPoint = new Vector3d(e.offsetX - 100, e.offsetY - 100, -100);
