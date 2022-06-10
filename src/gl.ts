@@ -1,10 +1,12 @@
 import objLoader from './obj-loader.utils';
-import model from './assets/truck.obj';
+import model from './assets/earth2.obj';
+//import model from './assets/truck.obj';
 import { m4Module } from './ext-utils/m4';
 import { createShader, createProgram } from './glutils';
 import { Vector3d } from './vector3d.dev';
 import calc from './calc.utils.js';
 import skull from './assets/Skull.jpg';
+//import skull from './assets/Diffuse_2K.png';
 import { createTexture } from './glutils';
 
 const m4 = m4Module();
@@ -149,7 +151,7 @@ export function testGL(
   let dom: Array<Model3d> = [];
 
   let project = m4.perspective(
-    Math.PI / 2,
+    45,
     gl.canvas.width / gl.canvas.height,
     0.05,
     30
@@ -222,7 +224,7 @@ class Model3d {
   public position: Vector3d;
   public colorUniformLocation: WebGLUniformLocation;
 
-  private speed: number = Math.random() * 1;
+  private speed: number = 1;
   public transformed: Array<any> = [];
   private isHovered: boolean;
   private texture: WebGLTexture;
@@ -257,19 +259,22 @@ class Model3d {
   }
 
   render(timeStamp: number, lightPoint:Vector3d) {
-    //this.angle += (1 / 180) * Math.PI * this.speed;
+    this.angle += (1 / 180) * Math.PI * this.speed;
    //console.log(this.angleX)
     let mtx = m4.identity(); //m4.identity();
- 
+    //this.angle +=0.03;
+    
     mtx = m4.translate(mtx, 0, 0, -1);
 
-    // mtx = m4.yRotate(mtx, this.angle);
+    mtx = m4.yRotate(mtx, this.angle);
     mtx = m4.xRotate(mtx, this.angleVector.y/100);
     mtx = m4.yRotate(mtx, this.angleVector.x / 100);
     
     mtx = m4.multiply(this.project, mtx);
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+   // this.position.x = Math.cos(this.angle)/2;
+   //this.position.y = Math.sin(this.angle)/2;
    
     //for (let i = 0; i < 100; i++){
     let mtx1 = m4.translate(

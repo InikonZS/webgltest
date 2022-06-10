@@ -11,8 +11,8 @@ export default class App extends Control {
   constructor(parentNode: HTMLElement) {
     super(parentNode);
     this.canvas = new Control(this.node, 'canvas');
-    (this.canvas.node as HTMLCanvasElement).width = 600;
-    (this.canvas.node as HTMLCanvasElement).height = 500;
+    (this.canvas.node as HTMLCanvasElement).width = 1600;
+    (this.canvas.node as HTMLCanvasElement).height = 800;
     this.context = (this.canvas.node as HTMLCanvasElement).getContext('webgl');
     testGL(this.context, vertexEasy, fragmentEasy);
   }
