@@ -53,7 +53,7 @@ export function testGL(
   // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-  var modelData = objLoader.getModList(model, false, 1.3);
+  var modelData = objLoader.getModList(model, false,1);
   // gl.cullFace(gl.BACK);
   var positions = modelData.triangleList;
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
@@ -168,15 +168,22 @@ export function testGL(
 
     let isDragStart = false;
     let startPoint: Vector3d;
-    let initialAngle: number;
+    let initialAngle: Vector3d = new Vector3d(0,0,)
 
     model3d.onMouseDown = (e) => {
-      initialAngle = model3d.angle;
+      initialAngle.y = model3d.angleVector.y;
+      initialAngle.x = model3d.angleVector.x
       isDragStart = true;
       startPoint = new Vector3d(e.offsetX, e.offsetY, 0);
+      
     }
 
     model3d.onMouseUp = (e) => {
+      isDragStart = false;
+    }
+
+    //потім напишу норм, без цього грузовик продовжує крутитись, якщо кнопку мишки відпустили поза зображенням машинки
+    document.body.onmouseup = (e) => {
       isDragStart = false;
     }
 
@@ -184,6 +191,9 @@ export function testGL(
       let vector = new Vector3d(e.offsetX, e.offsetY, 0);
       lightPoint = new Vector3d(e.offsetX - 100, e.offsetY - 100, -100);
       if (isDragStart) {
+        model3d.angleVector.y = initialAngle.y + vector.subVector(startPoint).y;//e.offsetX - startPoint.x;
+        model3d.angleVector.x =initialAngle.x + vector.subVector(startPoint).x;// e.offsetY - startPoint.y;
+       
         //model3d.angle = initialAngle + vector.subVector(startPoint).y / 500;
       }
     }
@@ -203,6 +213,8 @@ export function testGL(
 
 class Model3d {
   public angle: number = 0;
+  public angleVector: Vector3d = new Vector3d(0, 0, 0);
+
   public gl: WebGLRenderingContext;
   public project: any;
   public modelData: any;
@@ -245,16 +257,20 @@ class Model3d {
   }
 
   render(timeStamp: number, lightPoint:Vector3d) {
-    this.angle += (1 / 180) * Math.PI * this.speed;
+    //this.angle += (1 / 180) * Math.PI * this.speed;
+   //console.log(this.angleX)
     let mtx = m4.identity(); //m4.identity();
+ 
     mtx = m4.translate(mtx, 0, 0, -1);
-    // mtx = m4.yRotate(mtx, this.angle);
-    mtx = m4.xRotate(mtx, this.angle);
 
+    // mtx = m4.yRotate(mtx, this.angle);
+    mtx = m4.xRotate(mtx, this.angleVector.y/100);
+    mtx = m4.yRotate(mtx, this.angleVector.x / 100);
+    
     mtx = m4.multiply(this.project, mtx);
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-
+   
     //for (let i = 0; i < 100; i++){
     let mtx1 = m4.translate(
       m4.identity(),
@@ -262,7 +278,7 @@ class Model3d {
       this.position.y,
       this.position.z
     );
-    mtx1 = m4.multiply(mtx1, mtx);
+   mtx1 = m4.multiply(mtx1, mtx);
     this.gl.uniformMatrix4fv(this.transformUniformLocation, false, mtx1);
     this.gl.uniform3fv(this.lightPointLocation, new Float32Array([lightPoint.x, lightPoint.y, lightPoint.z]));
     this.gl.uniform4fv(
