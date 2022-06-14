@@ -182,8 +182,7 @@ export function testGL(
       isDragStart = false;
     }
 
-    //потім напишу норм, без цього грузовик продовжує крутитись, якщо кнопку мишки відпустили поза зображенням машинки
-    document.body.onmouseup = (e) => {
+   window.onmouseup = (e) => {
       isDragStart = false;
     }
 
