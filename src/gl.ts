@@ -5,8 +5,8 @@ import { m4Module } from './ext-utils/m4';
 import { createShader, createProgram } from './glutils';
 import { Vector3d } from './vector3d.dev';
 import calc from './calc.utils.js';
-import skull from './assets/Skull.jpg';
-//import skull from './assets/Diffuse_2K.png';
+//import skull from './assets/Skull.jpg';
+import skull from './assets/Diffuse_2K.png';
 import { createTexture } from './glutils';
 
 const m4 = m4Module();
@@ -273,8 +273,8 @@ class Model3d {
     mtx = m4.multiply(this.project, mtx);
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-   // this.position.x = Math.cos(this.angle)/2;
-   //this.position.y = Math.sin(this.angle)/2;
+    this.position.x = Math.cos(this.angle)/2;
+   this.position.y = Math.sin(this.angle)/2;
    
     //for (let i = 0; i < 100; i++){
     let mtx1 = m4.translate(
